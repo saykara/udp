@@ -7,6 +7,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+#include "utils.h"
+
 #define PORT 8080
 #define BUFFER_SIZE 1024
 #define FREQUENCY_MS 1000
@@ -33,6 +35,8 @@ void udp_client() {
     int ctr = 0;
     std::string msg;
     std::cout << "[UDP Client] running." << std::endl;
+    int seqNum = 0;
+
     while (true) {
         // Create request message
         msg = std::to_string(ctr);

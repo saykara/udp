@@ -9,7 +9,7 @@ COPY . .
 RUN apt-get update && apt-get install -y cmake \
     g++
 
-RUN cd /app && cmake . && make
+RUN cd /app && mkdir -p build && cd build && cmake .. && make
 
-CMD ["./server"]
+CMD ["./build/server"]
 

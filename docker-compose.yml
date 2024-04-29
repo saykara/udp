@@ -1,13 +1,21 @@
 version: '3'
-services:
-  client:
-    build: ./client
-    ports:
-      - "3000:3000"
-    depends_on:
-      - server 
 
+networks:
+  my_network:
+
+services:
   server:
     build: ./server
+    container_name: server
+    networks:
+      - my_network
     ports:
-      - "8000:8000"
+      - "8080:8080/udp"
+
+  client:
+    build: ./client
+    container_name: client
+    networks:
+      - my_network
+    depends_on:
+      - server

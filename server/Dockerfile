@@ -7,11 +7,9 @@ WORKDIR /app
 COPY . .
 
 RUN apt-get update && apt-get install -y cmake \
-g++
+    g++
 
-RUN cd /app && cmake . && make
+RUN cd /app && mkdir -p build && cd build && cmake .. && make
 
-EXPOSE 8000
-
-CMD ["./server"]
+CMD ["./build/server"]
 

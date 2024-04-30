@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <climits>
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -53,4 +54,43 @@ Message deserializeMessage(char* buffer)
     i++;
   }
   return msg;
+}
+
+int detect_connection_failures(uint64_t pre, uint64_t curr) {
+  // First package arrived
+  if (!pre) {
+    return curr;
+  }
+
+  if (pre == UINT64_MAX) {
+    return 0;
+  }
+
+  // Repeated data arrived
+  if (pre == curr) {
+    std::cerr << "Repeated data! Sequence no: " << curr << std::endl;
+    return curr;
+  }
+
+  // Missing or out of order package
+  if (pre + 1 != curr) {
+    if (pre > curr) {
+      std::cerr << "Data out of order! Previous: " << pre << " - Current: "<< curr << std::endl;
+      return pre;
+    } else {
+      // Print miising packages.
+      std::cerr << "Missing packages ";
+      for (int i = pre + 1; i < curr; i++) {
+        std::cerr << i;
+        if (i == curr - 1) {
+          std::cerr << std::endl;
+        } else {  
+          std::cerr << ", ";
+        }
+      }
+
+      return curr;
+    }
+  }
+  return curr;
 }

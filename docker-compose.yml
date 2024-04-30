@@ -5,7 +5,9 @@ networks:
 
 services:
   server:
-    build: ./server
+    build:
+      context: .
+      dockerfile: server/Dockerfile
     container_name: server
     networks:
       - my_network
@@ -13,7 +15,9 @@ services:
       - "8080:8080/udp"
 
   client:
-    build: ./client
+    build:
+      context: .
+      dockerfile: client/Dockerfile
     container_name: client
     networks:
       - my_network

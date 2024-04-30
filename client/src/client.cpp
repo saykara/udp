@@ -2,7 +2,6 @@
 #include <chrono>
 #include <thread>
 #include <cstring>
-#include <cstdint>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -88,6 +87,7 @@ void udp_client()
 int main()
 {
   // Run udp client
+  std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   std::cout << "[UDP Client] starting." << std::endl;
   udp_client();
   return 0;

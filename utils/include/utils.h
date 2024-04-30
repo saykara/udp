@@ -1,35 +1,56 @@
 #include <iostream>
 #include <cstring>
+#include <cmath>
+#include <vector>
+#include <algorithm>
 
-// Udp message 
-struct Message {
-    int sequenceNumber;
-    std::string message;
+static constexpr int BUFFER_SIZE = 1024;
+#define PACKETSIZE sizeof(Message);
+
+// Udp message
+struct Message
+{
+  int seqNum = 0;
+  char data[BUFFER_SIZE];
 };
 
 // Function to serialize the data into a character array
-void serializeMessage(const Message& msg, char* buffer, size_t bufferSize) {
-    memcpy(buffer, &msg.sequenceNumber, sizeof(int));
-    
-    // Copy message string into buffer, taking into account buffer size
-    size_t messageSize = std::min(bufferSize - sizeof(int), msg.message.size());
-    memcpy(buffer + sizeof(int), msg.message.c_str(), messageSize);
+void serializeMessage(Message& msg, char* buffer)
+{
+  // Serialize sequence number in front of the array
+  int* q = (int*)buffer;
+  *q = msg.seqNum;
+  q++;
+
+  // Serialize message in to the array
+  char* p = (char*)q;
+  int i = 0;
+  while (i < BUFFER_SIZE)
+  {
+    *p = msg.data[i];
+    p++;
+    i++;
+  }
 }
 
 // Function to deserialize the data from a character array
-Message deserializeMessage(const char* buffer, size_t bufferSize) {
-    Message msg;
-    
-    // Extract sequence number from buffer
-    memcpy(&msg.sequenceNumber, buffer, sizeof(int));
-    
-    // Extract message string from buffer
-    size_t messageSize = bufferSize - sizeof(int);
-    char* messageBuffer = new char[messageSize + 1];
-    memcpy(messageBuffer, buffer + sizeof(int), messageSize);
-    messageBuffer[messageSize] = '\0'; // End of a string
-    msg.message = messageBuffer;
-    delete[] messageBuffer;
-    
-    return msg;
+Message deserializeMessage(char* buffer)
+{
+  Message msg;
+  int* q = (int*)buffer;
+
+  // deserialize sequence number of the data
+  msg.seqNum = *q;
+  q++;
+
+  // deserialize data
+  char* p = (char*)q;
+  int i = 0;
+  while (i < BUFFER_SIZE)
+  {
+    msg.data[i] = *p;
+    p++;
+    i++;
+  }
+  return msg;
 }

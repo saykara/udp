@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <cstdlib>
 #include <climits>
 #include <cstdint>
 #include <cmath>

@@ -10,10 +10,10 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 #define PACKET_SIZE sizeof(Message)
+#define SERVER_IP std::getenv("SERVER_IP")
 
 void udp_server()
 {
-  std::cout << "Size of message is " << sizeof(Message) << std::endl;
   int sockfd;
   struct sockaddr_in serv, cli;
   socklen_t addr_len = sizeof(cli);
@@ -30,7 +30,7 @@ void udp_server()
   // Initializing server address
   memset(&serv, 0, sizeof(serv));
   serv.sin_family = AF_INET;
-  serv.sin_addr.s_addr = htonl(INADDR_ANY);
+  serv.sin_addr.s_addr = inet_addr(SERVER_IP);
   serv.sin_port = htons(PORT);
 
   // Bind socket address

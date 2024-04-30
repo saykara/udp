@@ -12,6 +12,7 @@
 #define BUFFER_SIZE 1024
 #define PACKET_SIZE sizeof(Message)
 #define FREQUENCY_MS 100
+#define SERVER_IP std::getenv("SERVER_IP")
 
 void udp_client()
 {
@@ -31,8 +32,13 @@ void udp_client()
   // Initializing server address
   memset(&serv, 0, sizeof(serv));
   serv.sin_family = AF_INET;
-  serv.sin_addr.s_addr = htonl(INADDR_ANY);
+  serv.sin_addr.s_addr = inet_addr(SERVER_IP);
   serv.sin_port = htons(PORT);
+
+  if (inet_pton(AF_INET, SERVER_IP, &serv.sin_addr) <= 0) {
+      std::cerr << "Invalid IP address" << std::endl;
+      return;
+  }
 
   std::cout << "[UDP Client] running." << std::endl;
   uint64_t seqNum = 0, prevNum = NULL;

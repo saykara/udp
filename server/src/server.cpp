@@ -41,7 +41,7 @@ void udp_server()
   }
   std::cout << "[UDP Server] running." << std::endl;
 
-  int seqNum;
+  uint64_t seqNum, prevNum = NULL;
   Message req, res;
 
   // Send & Receive
@@ -58,6 +58,8 @@ void udp_server()
     // Process received message
     req = deserializeMessage(buffer);
     std::cout << "Received from client: " << req.seqNum << " - " << req.data << std::endl;
+
+    prevNum = detect_connection_failures(prevNum, req.seqNum);
 
     // Create response message
     Message res{ req.seqNum, "Hello Bob!" };

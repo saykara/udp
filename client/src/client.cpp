@@ -3,7 +3,6 @@
 #include <thread>
 #include <cstring>
 #include <cstdint>
-#include <climits>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -13,7 +12,7 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 #define PACKET_SIZE sizeof(Message)
-#define FREQUENCY_MS 1000
+#define FREQUENCY_MS 100
 
 void udp_client()
 {
@@ -37,13 +36,13 @@ void udp_client()
   serv.sin_port = htons(PORT);
 
   std::cout << "[UDP Client] running." << std::endl;
-  int seqNum = 0;
+  uint64_t seqNum = 0, prevNum = NULL;
   Message req, res;
 
   while (true)
   {
     // Create request message
-    Message req = { seqNum, "Hello Alice!" };
+    Message req = {seqNum, "Hello Alice!" };
 
     // Serialize request message
     char msg[PACKET_SIZE];
@@ -68,9 +67,10 @@ void udp_client()
     // Process received message
     req = deserializeMessage(buffer);
     std::cout << "Received from server: " << req.seqNum << " - " << req.data << std::endl;
+    prevNum = detect_connection_failures(prevNum, req.seqNum);
 
     // Increment counter & wait for the specified frequency
-    if (seqNum != INT_MAX)
+    if (seqNum != UINT64_MAX)
     {
       seqNum++;
     }

@@ -12,7 +12,7 @@ static constexpr int BUFFER_SIZE = 1024;
 // Udp message
 struct Message
 {
-  int seqNum = 0;
+  u_int64_t seqNum = 0;
   char data[BUFFER_SIZE];
 };
 
@@ -20,7 +20,7 @@ struct Message
 void serializeMessage(Message& msg, char* buffer)
 {
   // Serialize sequence number in front of the array
-  int* q = (int*)buffer;
+  uint64_t* q = (uint64_t*)buffer;
   *q = msg.seqNum;
   q++;
 
@@ -39,7 +39,7 @@ void serializeMessage(Message& msg, char* buffer)
 Message deserializeMessage(char* buffer)
 {
   Message msg;
-  int* q = (int*)buffer;
+  uint64_t* q = (uint64_t*)buffer;
 
   // deserialize sequence number of the data
   msg.seqNum = *q;

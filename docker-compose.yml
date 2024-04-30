@@ -2,6 +2,9 @@ version: '3'
 
 networks:
   my_network:
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
 
 services:
   server:
@@ -10,9 +13,14 @@ services:
       dockerfile: server/Dockerfile
     container_name: server
     networks:
-      - my_network
+      my_network:
+        ipv4_address: 172.18.0.3
     ports:
       - "8080:8080/udp"
+    environment:
+      SERVER_IP: "172.18.0.3"
+    stdin_open: true
+    tty: true
 
   client:
     build:
@@ -20,6 +28,11 @@ services:
       dockerfile: client/Dockerfile
     container_name: client
     networks:
-      - my_network
+      my_network:
+        ipv4_address: 172.18.0.2
+    environment:
+      SERVER_IP: "172.18.0.3"
     depends_on:
       - server
+    stdin_open: true
+    tty: true

@@ -59,13 +59,8 @@ Message deserializeMessage(char* buffer)
 }
 
 int detect_connection_failures(uint64_t pre, uint64_t curr) {
-  // First package arrived
-  if (!pre) {
-    return curr;
-  }
-
   if (pre == UINT64_MAX) {
-    return 0;
+    return curr;
   }
 
   // Repeated data arrived

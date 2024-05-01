@@ -1,93 +1,92 @@
-#include <iostream>
-#include <chrono>
-#include <thread>
-#include <cstring>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
+#include "client.h"
 
-#include "utils.h"
 
-#define PORT 8080
-#define BUFFER_SIZE 1024
-#define PACKET_SIZE sizeof(Message)
-#define FREQUENCY_MS 100
-#define SERVER_IP std::getenv("SERVER_IP")
-
-void udp_client()
-{
-  int sockfd;
-  struct sockaddr_in serv;
-  socklen_t addr_len = sizeof(serv);
-  char buffer[PACKET_SIZE];
-
+void Client::configure_udp_socket() {
+  addr_len_ = sizeof(serv_);
   // Create UDP Socket file descriptor
-  sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (sockfd < 0)
-  {
-    std::cerr << "Failed to create socket!" << std::endl;
-    return;
+  sockfd_ = socket(AF_INET, SOCK_DGRAM, 0);
+  if (sockfd_ < 0) {
+    throw std::runtime_error("Failed to create socket!");
   }
 
   // Initializing server address
-  memset(&serv, 0, sizeof(serv));
-  serv.sin_family = AF_INET;
-  serv.sin_addr.s_addr = inet_addr(SERVER_IP);
-  serv.sin_port = htons(PORT);
+  memset(&serv_, 0, sizeof(serv_));
+  serv_.sin_family = AF_INET;
+  serv_.sin_addr.s_addr = inet_addr(SERVER_IP);
+  serv_.sin_port = htons(PORT);
 
-  if (inet_pton(AF_INET, SERVER_IP, &serv.sin_addr) <= 0) {
-      std::cerr << "Invalid IP address" << std::endl;
-      return;
+  // Validate IP Address
+  if (inet_pton(AF_INET, SERVER_IP, &serv_.sin_addr) <= 0) {
+    throw std::runtime_error("Invalid IP address!");
+  }
+}
+
+void Client::send_message(Message req) {
+  // Serialize request message
+  char msg[PACKET_SIZE];
+  serializeMessage(req, msg);
+
+  // Send request message to the server
+  ssize_t sendBytes = sendto(sockfd_, msg, PACKET_SIZE, 0, (struct sockaddr*)&serv_, addr_len_);
+  if (sendBytes < 0) {
+    throw std::runtime_error("Failed to send message!");
+  }
+}
+
+auto Client::receive_message() -> Message{
+  // Recieve response message from the server
+  ssize_t recvBytes = recvfrom(sockfd_, buffer_, PACKET_SIZE, 0, nullptr, nullptr);
+  if (recvBytes < 0) {
+    throw std::runtime_error("Failed while receiving message!");
   }
 
-  std::cout << "[UDP Client] running." << std::endl;
-  uint64_t seqNum = 0, prevNum = NULL;
-  Message req, res;
+  // Process received message
+  Message req = deserializeMessage(buffer_);
+  std::cout << "Received from server: " << req.seqNum << " - " << req.data << std::endl;
+  return req;
+}
 
-  while (true)
-  {
-    // Create request message
-    Message req = {seqNum, "Hello Alice!" };
+void Client::udp_client()
+{
+  try {
+    // Configure UDP Socket
+    configure_udp_socket();
 
-    // Serialize request message
-    char msg[PACKET_SIZE];
-    serializeMessage(req, msg);
+    std::cout << "[UDP Client] running." << std::endl;
+    uint64_t seqNum = 1, prevNum = 0;
+    Message req, res;
 
-    // Send request message to the server
-    ssize_t sendBytes = sendto(sockfd, msg, PACKET_SIZE, 0, (struct sockaddr*)&serv, addr_len);
-    if (sendBytes < 0)
+    while (true)
     {
-      std::cerr << "Failed to send message!" << std::endl;
-      break;
+      // Create request message
+      req = {seqNum, "Hello Alice!"};
+
+      // Send message
+      send_message(req);
+
+      // Receive message
+      res = receive_message();
+
+      // Detect communication failures
+      prevNum = detect_connection_failures(prevNum, res.seqNum);
+
+      // Increment counter & wait for the specified frequency
+      if (seqNum != UINT64_MAX) {
+        seqNum++;
+      }
+      else {
+        seqNum = 0;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(FREQUENCY_MS));
     }
 
-    // Recieve response message from the server
-    ssize_t recvBytes = recvfrom(sockfd, buffer, PACKET_SIZE, 0, nullptr, nullptr);
-    if (recvBytes < 0)
-    {
-      std::cerr << "Failed while receiving message!" << std::endl;
-      break;
-    }
-
-    // Process received message
-    req = deserializeMessage(buffer);
-    std::cout << "Received from server: " << req.seqNum << " - " << req.data << std::endl;
-    prevNum = detect_connection_failures(prevNum, req.seqNum);
-
-    // Increment counter & wait for the specified frequency
-    if (seqNum != UINT64_MAX)
-    {
-      seqNum++;
-    }
-    else
-    {
-      seqNum = 0;
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(FREQUENCY_MS));
+    close(sockfd_);
+    return;
+    
+  } catch (const std::exception& e) {
+    // Catch the exception and handle it
+    std::cerr << "Caught exception: " << e.what() << std::endl;
   }
-
-  close(sockfd);
-  return;
 }
 
 int main()
@@ -95,6 +94,10 @@ int main()
   // Run udp client
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
   std::cout << "[UDP Client] starting." << std::endl;
-  udp_client();
+
+  Client cli;
+  cli.udp_client();
+
+  std::cout << "[UDP Client] exiting." << std::endl;
   return 0;
 }

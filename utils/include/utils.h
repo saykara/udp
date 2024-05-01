@@ -1,36 +1,55 @@
-#include <iostream>
+#include <algorithm>
+#include <arpa/inet.h>
+#include <chrono>
 #include <cstring>
 #include <cstdlib>
 #include <climits>
 #include <cstdint>
+#include <ctime>
 #include <cmath>
+#include <iostream>
+#include <stdexcept>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <vector>
-#include <algorithm>
+
 
 static constexpr int BUFFER_SIZE = 1024;
 #define PACKETSIZE sizeof(Message);
 
-// Udp message
-struct Message
-{
+
+// Udp message header
+struct Header {
   u_int64_t seqNum = 0;
+  u_int64_t timestamp = 0;
+};
+
+// Udp message payload
+struct Payload {
   char data[BUFFER_SIZE];
+};
+
+// Udp message
+struct Message {
+  Header header;
+  Payload payload;
 };
 
 // Function to serialize the data into a character array
 void serializeMessage(Message& msg, char* buffer)
 {
   // Serialize sequence number in front of the array
-  uint64_t* q = (uint64_t*)buffer;
-  *q = msg.seqNum;
+  u_int64_t* q = (u_int64_t*)buffer;
+  *q = msg.header.seqNum;
+  q++;
+  *q = msg.header.timestamp;
   q++;
 
   // Serialize message in to the array
   char* p = (char*)q;
   int i = 0;
-  while (i < BUFFER_SIZE)
-  {
-    *p = msg.data[i];
+  while (i < BUFFER_SIZE) {
+    *p = msg.payload.data[i];
     p++;
     i++;
   }
@@ -43,15 +62,16 @@ Message deserializeMessage(char* buffer)
   uint64_t* q = (uint64_t*)buffer;
 
   // deserialize sequence number of the data
-  msg.seqNum = *q;
+  msg.header.seqNum = *q;
+  q++;
+  msg.header.timestamp = *q;
   q++;
 
   // deserialize data
   char* p = (char*)q;
   int i = 0;
-  while (i < BUFFER_SIZE)
-  {
-    msg.data[i] = *p;
+  while (i < BUFFER_SIZE) {
+    msg.payload.data[i] = *p;
     p++;
     i++;
   }
@@ -59,13 +79,8 @@ Message deserializeMessage(char* buffer)
 }
 
 int detect_connection_failures(uint64_t pre, uint64_t curr) {
-  // First package arrived
-  if (!pre) {
-    return curr;
-  }
-
   if (pre == UINT64_MAX) {
-    return 0;
+    return curr;
   }
 
   // Repeated data arrived

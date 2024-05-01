@@ -29,7 +29,8 @@ auto Server::receive_message() -> Message {
 
   // Process received message
   Message req = deserializeMessage(buffer_);
-  std::cout << "Received from client: " << req.seqNum << " - " << req.data << std::endl;
+  std::cout << "Received from client | Seq: " << req.header.seqNum << " - Time: " \
+            << req.header.timestamp <<  " - " << req.payload.data << std::endl;
   return req;
 }
 
@@ -52,22 +53,23 @@ void Server::udp_server()
 
     std::cout << "[UDP Server] running." << std::endl;
     uint64_t prevNum = 0;
-    Message req, res; 
+    Message msg; 
 
     // Send & Receive
     while (true)
     {
       // Receive message from client
-      req = receive_message();  
+      msg = receive_message();  
 
       // Detect failures
-      prevNum = detect_connection_failures(prevNum, req.seqNum);  
+      prevNum = detect_connection_failures(prevNum, msg.header.seqNum);  
 
       // Create response message
-      res = { req.seqNum, "Hello Bob!" };  
+      msg.header = { msg.header.seqNum, std::time(nullptr) };
+      msg.payload = { "Hello Bob!" };
 
       // Send response
-      send_message(res);
+      send_message(msg);
     } 
 
     // Close the socket

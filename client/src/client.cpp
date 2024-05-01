@@ -42,7 +42,8 @@ auto Client::receive_message() -> Message{
 
   // Process received message
   Message req = deserializeMessage(buffer_);
-  std::cout << "Received from server: " << req.seqNum << " - " << req.data << std::endl;
+  std::cout << "Received from server | Seq: " << req.header.seqNum << " - Time: " \
+            << req.header.timestamp <<  " - " << req.payload.data << std::endl;
   return req;
 }
 
@@ -54,21 +55,22 @@ void Client::udp_client()
 
     std::cout << "[UDP Client] running." << std::endl;
     uint64_t seqNum = 1, prevNum = 0;
-    Message req, res;
+    Message msg;
 
     while (true)
     {
       // Create request message
-      req = {seqNum, "Hello Alice!"};
+      msg.header = { seqNum, std::time(nullptr) };
+      msg.payload = { "Hello Alice!" };
 
       // Send message
-      send_message(req);
+      send_message(msg);
 
       // Receive message
-      res = receive_message();
+      msg = receive_message();
 
       // Detect communication failures
-      prevNum = detect_connection_failures(prevNum, res.seqNum);
+      prevNum = detect_connection_failures(prevNum, msg.header.seqNum);
 
       // Increment counter & wait for the specified frequency
       if (seqNum != UINT64_MAX) {

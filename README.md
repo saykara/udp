@@ -7,6 +7,8 @@ docker compose build
 docker compose up
 ```
 
+(Frequency and buffer size can be change by environmental variables inside docker-compose.yml)
+
 ### 2- Locally
 #### 2.0 Environmental variables sets
 ```sh
